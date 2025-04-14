@@ -70,6 +70,15 @@ const userChangeCurrentPasswordValidator = () => {
   return [
     body("oldPassword").notEmpty().withMessage("Old password is required"),
     body("newPassword").notEmpty().withMessage("New password is required"),
+    body("email").optional().isEmail().withMessage("Email is invalid"),
+    body("username").optional().isString().withMessage("Username is required"),
+    body().custom((value) => {
+      const { email, username } = value;
+      if (!email && !username) {
+        throw new Error("Either email or username must be provided.");
+      }
+      return true; // If validation passes, return true
+    }),
   ];
 };
 
