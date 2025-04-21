@@ -142,12 +142,65 @@ const updateProject = asyncHandler(async (req, res, next) => {
   next();
 });
 
-const deleteProject = asyncHandler(async (req, res) => {
-  // delete project
+const deleteProject = asyncHandler(async (req, res, next) => {
+  const { _id, name } = req.body;
+  const data = {};
+  let objectIds = Array.isArray(_id)
+    ? _id.map((id) => new mongoose.Types.ObjectId(id))
+    : !!_id
+      ? [new mongoose.Types.ObjectId(_id)]
+      : [];
+  const projectName = Array.isArray(name) ? name : !!name ? [name] : [];
+  const session = await mongoose.startSession();
+  req.session = session;
+  if (!objectIds.length && projectName.length)
+    objectIds = (
+      await Project.find({
+        name: { $in: projectName },
+      }).select("_id")
+    ).map((doc) => doc._id);
+  await session.withTransaction(async () => {
+    const projectDeleteResult = await Project.deleteMany({
+      ...(objectIds.length && { _id: { $in: objectIds } }),
+      ...(projectName.length && { name: { $in: projectName } }),
+    }).session(session);
+
+    const memberDeleteResult = await ProjectMember.deleteMany({
+      project: { $in: objectIds },
+    }).session(session);
+    data.projectDeleteResult = projectDeleteResult.deletedCount;
+    data.membersDeleted = memberDeleteResult.deletedCount;
+  });
+  req.apiResponse = {
+    statusCode: status.ACCEPTED,
+    data,
+    message: "Project(s) deleted successfully",
+  };
+  next();
 });
 
-const getProjectMembers = asyncHandler(async (req, res) => {
-  // get project members
+const getProjectMembers = asyncHandler(async (req, res, next) => {
+  const { projectId } = req.params;
+  const members = await ProjectMember.aggregate([
+    {
+      $match: {
+        ...(!!projectId && { project: new mongoose.Types.ObjectId(projectId) }),
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        user: 1,
+        role: 1,
+      },
+    },
+  ]);
+  req.apiResponse = {
+    statusCode: status.ACCEPTED,
+    data: members,
+    message: "Success",
+  };
+  next();
 });
 
 const addMemberToProject = asyncHandler(async (req, res) => {

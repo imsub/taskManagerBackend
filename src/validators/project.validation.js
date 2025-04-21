@@ -1,5 +1,7 @@
 import { body, param } from "express-validator";
 import { AvailableUserRoles } from "../utils/constants.js";
+import mongoose from "mongoose";
+import { ApiError } from "../utils/api-error.js";
 const createProjectValidator = () => {
   return [
     body("name").notEmpty().withMessage("Name is required"),
@@ -48,9 +50,9 @@ const getProjectsValidator = () => {
       body().custom((value) => {
         const { email, username } = value;
         if (!email && !username) {
-          throw new Error("Either email or username must be provided.");
+            throw new ApiError(500,"Either email or username must be provided.");
         }
-        return true; // If validation passes, return true
+        return true; 
       })
   ];
 };
@@ -62,10 +64,65 @@ const updateProjectValidator = () => {
     body().custom((value) => {
       const { description, name } = value;
       if (!description && !name) {
-        throw new Error("Either Project description or name must be provided.");
+          throw new ApiError(500,"Either Project description or name must be provided.");
       }
-      return true; // If validation passes, return true
+      return true; 
     })
+  ];
+};
+
+const deleteProjectValidator = () =>{
+  return [
+    body('_id').optional()
+    .custom((value) => {
+      const _id = Array.isArray(value) ? value : [value];
+      if (_id.length === 0) {
+          throw new ApiError(500,'Project ID(s) is required');
+      }
+      for (let id of _id) {
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new ApiError(500,`Invalid project ID: ${id}`);
+        }
+      }
+
+      return true;
+    }),
+    body('name').optional()
+    .custom((value) => {
+      const name = Array.isArray(value) ? value : [value];
+      if (name.length === 0) {
+          throw new ApiError(500,'Project name(s) is required');
+      }
+      for (let _name of name) {
+        if (typeof _name !== "string") {
+            throw new ApiError(500,`Invalid project name: ${_name}`);
+        }
+      }
+
+      return true;
+    }),
+    body().custom((value) => {
+      const { _id, name } = value;
+      if (!_id && !name) {
+          throw new ApiError(500,"Either Project ID or name must be provided to delete records.");
+      }
+      if(Array.isArray(_id) && Array.isArray(name) && (_id.length !== name.length)){
+          throw new ApiError(500,"Request Body has inconsistent data for Project ID and name as no of records does not match provided in array.");
+      }
+      if((!Array.isArray(_id) && Array.isArray(name)) || (Array.isArray(_id) && !Array.isArray(name))){
+          throw new ApiError(500,"Request Body has inconsistent data for Project ID and name as one param is in array and other one is string.");
+      }
+      return true;
+    })
+  ];
+}
+const projectMembersValidator = () => {
+  return [
+    param("projectId")
+    .trim()
+    .isString()
+    .notEmpty()
+    .withMessage("project ID is required")
   ];
 };
 export default {
@@ -73,5 +130,7 @@ export default {
     createProjectValidator,
     getProjectByIdValidator,
     getProjectsValidator,
-    updateProjectValidator
+    updateProjectValidator,
+    deleteProjectValidator,
+    projectMembersValidator
   };

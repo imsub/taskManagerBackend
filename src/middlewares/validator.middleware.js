@@ -10,11 +10,11 @@ const validate = (req, res, next) => {
   const extractedError = [];
   errors.array().map((err) =>
     extractedError.push({
-      [err.path]: err.msg,
+      [err.path || "customValidator"]: err.msg,
     }),
   );
 
-  throw new ApiError(422, "Recieved data is not valid", extractedError);
+  throw new ApiError(500, extractedError);
 };
 const validateToken = (req,res,next) =>{
   const {token} = req.params ?? req.body;

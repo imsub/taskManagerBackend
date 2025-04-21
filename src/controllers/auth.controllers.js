@@ -12,11 +12,11 @@ const registerUser = asyncHandler(async (req, res, next) => {
   const { email, username, password, fullName } = req.body;
   let response = await User.isEmailTaken(email);
   if (response) {
-    throw new ApiError(status.OK, "Email already taken");
+    throw new ApiError(status.INTERNAL_SERVER_ERROR, "Email already taken");
   }
   response = await User.isUserNameTaken(username);
   if (response) {
-    throw new ApiError(status.OK, "Username already taken");
+    throw new ApiError(status.INTERNAL_SERVER_ERROR, "Username already taken");
   }
   const user = new User({ email, username, password, fullName });
   const token = await user.generateTemporaryToken();
