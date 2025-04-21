@@ -20,4 +20,4 @@ const deleteNote = async (req, res) => {
   // delete note
 };
 
-export { createNote, deleteNote, getNoteById, getNotes, updateNote };
+export default { createNote, deleteNote, getNoteById, getNotes, updateNote };

@@ -1,6 +1,6 @@
 import { Router } from "express";
+import {noteController } from "../controllers/index.js";
+const notesRouter = Router()
 
-const router = Router()
-
-
-export default router
+//notesRouter.route("/notes").get(userValidation.userRegisterValidator(), validatorMiddleware.validate, authController.registerUser);
+export default notesRouter;

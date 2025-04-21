@@ -9,15 +9,15 @@ const errorHandler = (err, req, res,next) => {
     res.locals.errorMessage = err.message;
 
     let response = {
-        code: statusCode,
+        code: statusCode ?? 500,
         message,
-        data
+        data : data ?? []
     }
     if(err.message === "Not found") {
         const {stack, ... newResponse} = response;
         response = newResponse;
     }
-    res.status(statusCode).send(response);
+    res.status(response.code).send(response);
 };
 
 export default {errorHandler};
