@@ -90,6 +90,10 @@ userSchema.statics.isEmailTaken = async function (email) {
   const data = await mongoose.model("User",userSchema).findOne({email:email});
   return !!data;
 };
+userSchema.statics.checkUserValidityById = async function (_id) {
+  const data = await mongoose.model("User",userSchema).findById(_id);
+  return !!data;
+};
 userSchema.statics.getUserByEmailOrUserName = async(obj) =>{
       const data =  await mongoose.model("User",userSchema).findOne(obj);
       return data;

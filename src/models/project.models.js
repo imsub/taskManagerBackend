@@ -19,5 +19,8 @@ const projectSchema = new Schema(
   },
   { timestamps: true },
 );
-
+projectSchema.statics.checkProjectValidityById = async function (_id) {
+  const data = await mongoose.model("Project",projectSchema).findById(_id);
+  return !!data;
+};
 export const Project = mongoose.model("Project", projectSchema);

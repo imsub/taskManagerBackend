@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/async-handler.js";
 import { status } from "http-status";
-import { Project, ProjectMember } from "../models/index.js";
+import { Project, ProjectMember, User } from "../models/index.js";
 import { ApiError } from "../utils/api-error.js";
 import mongoose from "mongoose";
 
@@ -8,7 +8,10 @@ const getProjects = asyncHandler(async (req, res, next) => {
   const { email, username } = req.body;
   const { _id, email: _email, username: _username } = req.user;
   if (email !== email || username !== _username)
-    throw new ApiError(status.ApiError, "Incorrect email or username");
+    throw new ApiError(
+      status.SERVICE_UNAVAILABLE,
+      "Incorrect email or username",
+    );
 
   const projects = await Project.aggregate([
     {
@@ -65,9 +68,16 @@ const getProjectById = asyncHandler(async (req, res, next) => {
         as: "members",
       },
     },
+    { $unwind: "$members" },
     {
-      $unwind: "$members",
+      $lookup: {
+        from: "users",
+        localField: "members.user",
+        foreignField: "_id",
+        as: "memberUser",
+      },
     },
+    { $unwind: "$memberUser" },
     {
       $group: {
         _id: "$_id",
@@ -77,7 +87,7 @@ const getProjectById = asyncHandler(async (req, res, next) => {
         members: {
           $push: {
             role: "$members.role",
-            user: "$members.user",
+            user: "$memberUser",
             createdBy: "$members.createdBy",
             createdAt: "$members.createdAt",
             updatedAt: "$members.updatedAt",
@@ -184,7 +194,7 @@ const getProjectMembers = asyncHandler(async (req, res, next) => {
   const members = await ProjectMember.aggregate([
     {
       $match: {
-        ...(!!projectId && { project: new mongoose.Types.ObjectId(projectId) }),
+        project: new mongoose.Types.ObjectId(projectId),
       },
     },
     {
@@ -203,16 +213,64 @@ const getProjectMembers = asyncHandler(async (req, res, next) => {
   next();
 });
 
-const addMemberToProject = asyncHandler(async (req, res) => {
-  // add member to project
+const addMemberToProject = asyncHandler(async (req, res, next) => {
+  const { projectId, userId, role } = req.body;
+  const isUserValid = await User.checkUserValidityById(userId);
+  const isProjectValid = await Project.checkProjectValidityById(projectId);
+  if (!isUserValid && isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid User ID");
+  if (isUserValid && !isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid Project ID");
+  if (!isUserValid && !isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid User & Project ID");
+  await ProjectMember.create({ project: projectId, user: userId, role });
+  req.apiResponse = {
+    statusCode: status.OK,
+    data: { project: projectId, user: userId, role },
+    message: "Success",
+  };
+  next();
 });
 
-const deleteMember = asyncHandler(async (req, res) => {
-  // delete member from project
+const deleteMember = asyncHandler(async (req, res, next) => {
+  const { projectId, userId } = req.body;
+  const isUserValid = await User.checkUserValidityById(userId);
+  const isProjectValid = await Project.checkProjectValidityById(projectId);
+  if (!isUserValid && isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid User ID");
+  if (isUserValid && !isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid Project ID");
+  if (!isUserValid && !isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid User & Project ID");
+  await ProjectMember.deleteOne({ user: userId, project: projectId });
+  req.apiResponse = {
+    statusCode: status.OK,
+    data: { message: "member removed from project" },
+    message: "Success",
+  };
+  next();
 });
 
-const updateMemberRole = asyncHandler(async (req, res) => {
-  // update member role
+const updateMemberRole = asyncHandler(async (req, res, next) => {
+  const { projectId, userId, role } = req.body;
+  const isUserValid = await User.checkUserValidityById(userId);
+  const isProjectValid = await Project.checkProjectValidityById(projectId);
+  if (!isUserValid && isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid User ID");
+  if (isUserValid && !isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid Project ID");
+  if (!isUserValid && !isProjectValid)
+    throw new ApiError(status.SERVICE_UNAVAILABLE, "Invalid User & Project ID");
+  await ProjectMember.updateOne(
+    { project: projectId, user: userId },
+    { $set: { role } },
+  );
+  req.apiResponse = {
+    statusCode: status.OK,
+    data: {  message: "member role changed successfully" },
+    message: "Success",
+  };
+  next();
 });
 
 export default {
