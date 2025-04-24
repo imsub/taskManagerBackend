@@ -1,42 +1,101 @@
-// get all tasks
-const getTasks = async (req, res) => {
-  // get all tasks
-};
+import {
+  Task,
+  SubTask,
+} from "../models/index.js";
+import { asyncHandler } from "../utils/async-handler.js";
+import { status } from "http-status";
+import { ApiError } from "../utils/api-error.js";
 
-// get task by id
-const getTaskById = async (req, res) => {
-  // get task by id
-};
+const getTasks = asyncHandler(async (req, res, next) => {
+  //{title,description,project,assignedTo,assignedBy,status,attachments}
+  const { title, projectId, assignedTo, assignedBy, status } = req.body;
+  const result = await Task.find({
+    ...(!!projectId && { project: projectId }),
+    ...(!!assignedTo && { assignedTo }),
+    ...(!!title && { title }),
+    ...(!!assignedBy && { assignedBy }),
+    ...(!!status && { status }),
+  });
+  req.apiResponse = {
+    statusCode: status.OK,
+    data: result,
+    message: "Success",
+  };
+  next();
+});
 
-// create task
-const createTask = async (req, res) => {
-  // create task
-};
+
+const getTaskById = asyncHandler(async (req, res, next) => {
+  const { taskId } = req.params;
+  const result = await Task.findById(taskId);
+  req.apiResponse = {
+    statusCode: status.OK,
+    data: result,
+    message: "Success",
+  };
+  next();
+});
+
+
+const createTask = asyncHandler(async (req, res, next) => {
+  const { title, description, projectId, assignedTo, assignedBy, status , attachments} = req.body;
+  const result = await Task.create({
+    ...(!!projectId && { project: projectId }),
+    ...(!!assignedTo && { assignedTo }),
+    ...(!!title && { title }),
+    ...(!!req?.user?._id && { assignedBy:req.user._id }),
+    ...(!!status && { status }),
+    ...(!!description && { description }),
+    ...(!!attachments && { attachments }),
+  });
+  req.apiResponse = {
+    statusCode: status.OK,
+    data: result,
+    message: "Success",
+  };
+  next();
+});
 
 // update task
-const updateTask = async (req, res) => {
+const updateTask = asyncHandler(async (req, res, next) => {
   // update task
-};
+  const { title, description, projectId, assignedTo, assignedBy, status , attachments ,_id} = req.body;
+  const result = await Task.create({
+    ...(!!projectId && { project: projectId }),
+    ...(!!assignedTo && { assignedTo }),
+    ...(!!title && { title }),
+    ...(!!req?.user?._id && { assignedBy:req.user._id }),
+    ...(!!status && { status }),
+    ...(!!description && { description }),
+    ...(!!attachments && { attachments }),
+  });
+  req.apiResponse = {
+    statusCode: status.OK,
+    data: result,
+    message: "Success",
+  };
+  next();
+});
 
 // delete task
-const deleteTask = async (req, res) => {
+const deleteTask = asyncHandler(async (req, res, next) => {
   // delete task
-};
+});
 
 // create subtask
-const createSubTask = async (req, res) => {
+const createSubTask = asyncHandler(async (req, res, next) => {
   // create subtask
-};
+});
 
 // update subtask
-const updateSubTask = async (req, res) => {
+const updateSubTask = asyncHandler(async (req, res, next) => {
   // update subtask
-};
+});
 
 // delete subtask
-const deleteSubTask = async (req, res) => {
+const deleteSubTask = asyncHandler(async (req, res, next) => {
   // delete subtask
-};
+});
 
 export {
   createSubTask,

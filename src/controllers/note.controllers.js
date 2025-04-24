@@ -2,7 +2,6 @@ import { ProjectNote, Project, ProjectMember, User } from "../models/index.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { status } from "http-status";
 import { ApiError } from "../utils/api-error.js";
-import mongoose from "mongoose";
 
 const getNotes = asyncHandler(async (req, res, next) => {
   const { projectId, userId } = req.body;
