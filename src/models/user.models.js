@@ -103,7 +103,7 @@ userSchema.statics.isUserNameTaken = async function (username) {
   return !!data;
 };
 
-userSchema.methods.generateToken = async function (tokenType) {
+userSchema.methods.generateToken = function (tokenType) {
   
 return tokenType.toUpperCase() === "TEMPORARY" ? this.generateTemporaryToken() : 
   jwt.sign(
